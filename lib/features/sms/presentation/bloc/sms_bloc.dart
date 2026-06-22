@@ -10,12 +10,20 @@ part 'sms_state.dart';
 class SmsBloc extends Bloc<SmsEvent, SmsState> {
   SmsBloc(this._repository) : super(const SmsState()) {
     on<SmsStarted>(_onStarted);
+    on<SmsAppResumed>(_onAppResumed);
     on<SmsScanRequested>(_onScanRequested);
   }
 
   final SmsRepository _repository;
 
   Future<void> _onStarted(SmsStarted event, Emitter<SmsState> emit) async {
+    await _loadStored(emit);
+  }
+
+  Future<void> _onAppResumed(
+    SmsAppResumed event,
+    Emitter<SmsState> emit,
+  ) async {
     await _loadStored(emit);
   }
 
@@ -53,8 +61,15 @@ class SmsBloc extends Bloc<SmsEvent, SmsState> {
 
   Future<void> _loadStored(Emitter<SmsState> emit) async {
     try {
+      final insertedCount = await _repository.importPendingIncoming();
       final messages = await _repository.watchStoredSmsSnapshot();
-      emit(state.copyWith(status: SmsViewStatus.ready, messages: messages));
+      emit(
+        state.copyWith(
+          status: SmsViewStatus.ready,
+          messages: messages,
+          lastInsertedCount: insertedCount,
+        ),
+      );
     } catch (error) {
       emit(
         state.copyWith(

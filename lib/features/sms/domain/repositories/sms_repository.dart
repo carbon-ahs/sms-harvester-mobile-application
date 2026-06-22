@@ -5,5 +5,7 @@ abstract interface class SmsRepository {
 
   Future<int> importInboxAndPendingIncoming();
 
+  Future<int> importPendingIncoming();
+
   Future<List<HarvestedSms>> watchStoredSmsSnapshot();
 }

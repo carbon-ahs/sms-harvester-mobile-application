@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
-import org.json.JSONArray
+import android.util.Log
 import org.json.JSONObject
 
 class SmsBroadcastReceiver : BroadcastReceiver() {
@@ -12,7 +12,10 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
 
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-        if (messages.isEmpty()) return
+        if (messages.isEmpty()) {
+            Log.d(LOG_TAG, "SMS broadcast received with no message parts")
+            return
+        }
 
         val address = messages.firstOrNull()?.originatingAddress
         val serviceCenter = messages.firstOrNull()?.serviceCenterAddress
@@ -31,18 +34,26 @@ class SmsBroadcastReceiver : BroadcastReceiver() {
             .put("seen", false)
             .put("serviceCenter", serviceCenter)
 
-        val preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val pendingMessages = JSONArray(preferences.getString(PENDING_MESSAGES_KEY, "[]"))
-        pendingMessages.put(stagedMessage)
-
-        preferences
-            .edit()
-            .putString(PENDING_MESSAGES_KEY, pendingMessages.toString())
-            .apply()
+        Log.d(
+            LOG_TAG,
+            "SMS broadcast received: sender=$address, parts=${messages.size}",
+        )
+        SmsPendingStore.append(context, stagedMessage)
+        val inserted = SmsDatabaseWriter.upsertOne(context, stagedMessage.toMap())
+        Log.d(LOG_TAG, "SMS broadcast native DB write finished: inserted=$inserted")
     }
 
     companion object {
-        const val PREFS_NAME = "sms_harvester_incoming_sms"
-        const val PENDING_MESSAGES_KEY = "pending_messages"
+        private const val LOG_TAG = "SmsHarvester"
     }
+}
+
+private fun JSONObject.toMap(): Map<String, Any?> {
+    val output = mutableMapOf<String, Any?>()
+    val keys = keys()
+    while (keys.hasNext()) {
+        val key = keys.next()
+        output[key] = if (isNull(key)) null else get(key)
+    }
+    return output
 }

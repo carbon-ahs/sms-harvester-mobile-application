@@ -11,6 +11,10 @@ final class SmsStarted extends SmsEvent {
   const SmsStarted();
 }
 
+final class SmsAppResumed extends SmsEvent {
+  const SmsAppResumed();
+}
+
 final class SmsScanRequested extends SmsEvent {
   const SmsScanRequested();
 }

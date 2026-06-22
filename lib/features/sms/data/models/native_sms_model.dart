@@ -54,7 +54,6 @@ class NativeSmsModel extends HarvestedSms {
       creator: _asString(map['creator']),
       subscriptionId: _asInt(map['subscriptionId']),
       fingerprint: _fingerprint(
-        providerId: providerId,
         address: address,
         body: body,
         dateMillis: dateMillis,
@@ -64,14 +63,12 @@ class NativeSmsModel extends HarvestedSms {
   }
 
   static String _fingerprint({
-    required int? providerId,
     required String? address,
     required String body,
     required int dateMillis,
     required String type,
   }) {
     final source = [
-      providerId?.toString() ?? '',
       address ?? '',
       body,
       dateMillis.toString(),

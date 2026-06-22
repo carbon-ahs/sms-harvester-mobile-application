@@ -3,8 +3,32 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/sms_bloc.dart';
 
-class SmsPage extends StatelessWidget {
+class SmsPage extends StatefulWidget {
   const SmsPage({super.key});
+
+  @override
+  State<SmsPage> createState() => _SmsPageState();
+}
+
+class _SmsPageState extends State<SmsPage> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<SmsBloc>().add(const SmsAppResumed());
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
